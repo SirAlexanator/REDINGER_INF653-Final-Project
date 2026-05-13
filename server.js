@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 
 // 404 Middleware
 app.use((req, res) => {
-    if (req.accepts('html')) {
+    if (req.headers.accept && req.headers.accept.includes('text/html')) {
         res.status(404).send('<h1>404 Not Found</h1>');
     } else {
         res.status(404).json({ error: '404 Not Found' });
@@ -33,9 +33,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message });
 });
 
-// DB + Server
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => app.listen(process.env.PORT, () =>
-        console.log(`Server running on port ${process.env.PORT}`)
-    ))
-    .catch(err => console.log(err));
+const connectDB = require('./config/db');
+
+connectDB();
+
+app.listen(process.env.PORT, () =>
+    console.log(`Server running on port ${process.env.PORT}`)
+);

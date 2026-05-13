@@ -1,0 +1,17 @@
+# Event Ticketing API
+
+## Description
+A REST API for managing events and ticket bookings with authentication and admin control.
+
+## Features
+- User registration and login (JWT)
+- Event management (admin only)
+- Ticket booking system
+- User-specific bookings
+- Validation and error handling
+
+## Installation
+```bash
+git clone <repo>
+cd project
+npm install

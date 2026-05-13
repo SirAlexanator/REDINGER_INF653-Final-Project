@@ -1,41 +1,63 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 
-exports.createBooking = async (req, res) => {
-    const { event, quantity } = req.body;
+exports.createBooking = async (req, res, next) => {
+    try {
+        const { event, quantity } = req.body;
 
-    const foundEvent = await Event.findById(event);
+        const updatedEvent = await Event.findOneAndUpdate(
+            {
+                _id: event,
+                $expr: {
+                    $gte: [
+                        { $subtract: ['$seatCapacity', '$bookedSeats'] },
+                        quantity
+                    ]
+                }
+            },
+            { $inc: { bookedSeats: quantity } },
+            { new: true }
+        );
 
-    const availableSeats = foundEvent.seatCapacity - foundEvent.bookedSeats;
+        if (!updatedEvent) {
+            return res.status(400).json({ error: 'Not enough seats' });
+        }
 
-    if (quantity > availableSeats) {
-        return res.status(400).json({ error: 'Not enough seats' });
+        const booking = new Booking({
+            user: req.user.id,
+            event,
+            quantity
+        });
+
+        await booking.save();
+        res.status(201).json(booking);
+
+    } catch (err) {
+        next(err);
     }
-
-    foundEvent.bookedSeats += quantity;
-    await foundEvent.save();
-
-    const booking = new Booking({
-        user: req.user.id,
-        event,
-        quantity
-    });
-
-    await booking.save();
-    res.json(booking);
 };
 
-exports.getBookings = async (req, res) => {
-    const bookings = await Booking.find({ user: req.user.id }).populate('event');
-    res.json(bookings);
+exports.getBookings = async (req, res, next) => {
+    try {
+        const bookings = await Booking.find({ user: req.user.id }).populate('event');
+        res.json(bookings);
+    } catch (err) {
+        next(err);
+    }
 };
 
-exports.getBookingById = async (req, res) => {
-    const booking = await Booking.findById(req.params.id);
+exports.getBookingById = async (req, res, next) => {
+    try {
+        const booking = await Booking.findById(req.params.id).populate('event');
 
-    if (booking.user.toString() !== req.user.id) {
-        return res.status(403).json({ error: 'Unauthorized' });
+        if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+        if (booking.user.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        res.json(booking);
+    } catch (err) {
+        next(err);
     }
-
-    res.json(booking);
 };
