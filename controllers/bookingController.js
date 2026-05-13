@@ -1,6 +1,6 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
-
+const sendBookingEmail = require('../utils/email');
 exports.createBooking = async (req, res, next) => {
     try {
         const { event, quantity } = req.body;
@@ -24,13 +24,29 @@ exports.createBooking = async (req, res, next) => {
         }
 
         const booking = new Booking({
-            user: req.user.id,
-            event,
-            quantity
-        });
+    user: req.user.id,
+    event,
+    quantity
+});
 
-        await booking.save();
-        res.status(201).json(booking);
+await booking.save();
+const user = await User.findById(req.user.id);
+
+await sendBookingEmail(user.email, booking);
+// Generate QR code
+const qrData = JSON.stringify({
+    bookingId: booking._id,
+    event,
+    user: req.user.id
+});
+
+const qrCode = await QRCode.toDataURL(qrData);
+
+// Save QR to booking
+booking.qrCode = qrCode;
+await booking.save();
+
+res.status(201).json(booking);
 
     } catch (err) {
         next(err);
