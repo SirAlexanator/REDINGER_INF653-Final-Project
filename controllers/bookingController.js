@@ -50,8 +50,8 @@ exports.createBooking = async (req, res, next) => {
         await booking.save();
 
         const user = await User.findById(req.user.id);
-console.log("EMAIL USER:", process.env.EMAIL_USER);
-console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
+//console.log("EMAIL USER:", process.env.EMAIL_USER);
+//console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
         if (user?.email) {
             await sendEmail(
                 user.email,
@@ -66,6 +66,32 @@ console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
             qrCode
         });
 
+    } catch (err) {
+        next(err);
+    }
+};
+exports.getBookings = async (req, res, next) => {
+    try {
+        const bookings = await Booking.find({ user: req.user.id }).populate('event');
+        res.json(bookings);
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getBookingById = async (req, res, next) => {
+    try {
+        const booking = await Booking.findById(req.params.id).populate('event');
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        if (booking.user.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        res.json(booking);
     } catch (err) {
         next(err);
     }
