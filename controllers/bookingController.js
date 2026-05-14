@@ -9,96 +9,62 @@ exports.createBooking = async (req, res, next) => {
         const { event, quantity } = req.body;
 
         if (!event || !quantity) {
-            return res.status(400).json({ error: 'Event and quantity are required' });
+            return res.status(400).json({ error: 'Event and quantity required' });
         }
 
-        if (quantity <= 0) {
-            return res.status(400).json({ error: 'Quantity must be greater than 0' });
+        const qty = Number(quantity);
+
+        if (isNaN(qty) || qty <= 0) {
+            return res.status(400).json({ error: 'Invalid quantity' });
         }
 
-        // Get event safely
         const foundEvent = await Event.findById(event);
 
         if (!foundEvent) {
             return res.status(404).json({ error: 'Event not found' });
         }
 
-        // Ensure bookedSeats is NEVER undefined
-        if (foundEvent.bookedSeats == null) {
-            foundEvent.bookedSeats = 0;
-        }
+        // 🔥 HARD SAFETY CHECK
+        const booked = Number(foundEvent.bookedSeats || 0);
+        const capacity = Number(foundEvent.seatCapacity || 0);
 
-        const availableSeats = foundEvent.seatCapacity - foundEvent.bookedSeats;
+        const remaining = capacity - booked;
 
-        if (quantity > availableSeats) {
+        if (qty > remaining) {
             return res.status(400).json({ error: 'Not enough seats available' });
         }
 
-        // Update seats safely
-        foundEvent.bookedSeats += quantity;
+        // update safely
+        foundEvent.bookedSeats = booked + qty;
         await foundEvent.save();
 
-        // Create booking
-        const booking = new Booking({
+        const booking = await Booking.create({
             user: req.user.id,
             event,
-            quantity
+            quantity: qty
         });
 
-        await booking.save();
-
-        // Generate QR code
-        const qrData = `booking:${booking._id}`;
-
-        const qrCode = await QRCode.toDataURL(qrData);
+        const qrCode = await QRCode.toDataURL(`booking:${booking._id}`);
 
         booking.qrCode = qrCode;
         await booking.save();
 
-        // Send email
         const user = await User.findById(req.user.id);
 
-        if (user && user.email) {
+        if (user?.email) {
             await sendEmail(
                 user.email,
                 'Booking Confirmation',
-                `Your booking is confirmed.\nBooking ID: ${booking._id}\nQuantity: ${quantity}`
+                `Booking confirmed. ID: ${booking._id}`
             );
         }
 
-        return res.status(201).json({
+        res.status(201).json({
             message: 'Booking successful',
             booking,
             qrCode
         });
 
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.getBookings = async (req, res, next) => {
-    try {
-        const bookings = await Booking.find({ user: req.user.id }).populate('event');
-        res.json(bookings);
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.getBookingById = async (req, res, next) => {
-    try {
-        const booking = await Booking.findById(req.params.id).populate('event');
-
-        if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
-        }
-
-        if (booking.user.toString() !== req.user.id) {
-            return res.status(403).json({ error: 'Unauthorized' });
-        }
-
-        res.json(booking);
     } catch (err) {
         next(err);
     }
