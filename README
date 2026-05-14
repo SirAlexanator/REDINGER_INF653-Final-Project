@@ -1,17 +1,53 @@
 # Event Ticketing API
 
-## Description
-A REST API for managing events and ticket bookings with authentication and admin control.
+A RESTful API built with Node.js, Express, and MongoDB for managing events, bookings, and users with JWT authentication and role-based access control.
+
+---
 
 ## Features
-- User registration and login (JWT)
-- Event management (admin only)
-- Ticket booking system
-- User-specific bookings
-- Validation and error handling
+
+### User Features
+- User registration and login
+- View events
+- Filter events by category and date
+- Book tickets
+- View own bookings
+
+### Admin Features
+- Create, update, and delete events
+- View all bookings per event (dashboard)
+- Manage seat capacity
+
+### Security
+- JWT authentication
+- Password hashing with bcrypt
+- Role-based access control (user/admin)
+- Protected routes
+
+### Bonus Features
+- QR code generation for bookings
+- QR ticket validation endpoint
+- Email confirmation using Nodemailer
+- Admin dashboard for event analytics
+
+---
+
+## Tech Stack
+
+- Node.js
+- Express.js
+- MongoDB & Mongoose
+- JWT Authentication
+- bcryptjs
+- Nodemailer
+- qrcode
+- dotenv
+
+---
 
 ## Installation
+
 ```bash
-git clone <repo>
-cd project
+git clone <https://github.com/SirAlexanator/REDINGER_INF653-Final-Project>
+cd event-ticketing-api
 npm install
