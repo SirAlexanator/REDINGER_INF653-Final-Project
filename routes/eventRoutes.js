@@ -2,6 +2,9 @@ const router = require('express').Router();
 const auth = require('../middleware/authMiddleware');
 const admin = require('../middleware/adminMiddleware');
 
+const Event = require('../models/Event');
+const Booking = require('../models/Booking');
+
 const {
     getEvents,
     getEventById,
@@ -16,6 +19,8 @@ router.get('/:id', getEventById);
 router.post('/', auth, admin, createEvent);
 router.put('/:id', auth, admin, updateEvent);
 router.delete('/:id', auth, admin, deleteEvent);
+
+//  Admin Dashboard
 router.get('/admin/dashboard', auth, admin, async (req, res) => {
     const events = await Event.find();
 
@@ -31,4 +36,5 @@ router.get('/admin/dashboard', auth, admin, async (req, res) => {
 
     res.json(result);
 });
+
 module.exports = router;
