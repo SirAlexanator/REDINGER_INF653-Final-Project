@@ -8,37 +8,24 @@ exports.createBooking = async (req, res, next) => {
     try {
         const { event, quantity } = req.body;
 
-        if (!event || !quantity) {
-            return res.status(400).json({ error: 'Event and quantity are required' });
+        const updatedEvent = await Event.findOneAndUpdate(
+            {
+                _id: event,
+                $expr: {
+                    $gte: [
+                        { $subtract: ['$seatCapacity', '$bookedSeats'] },
+                        quantity
+                    ]
+                }
+            },
+            { $inc: { bookedSeats: quantity } },
+            { new: true }
+        );
+
+        if (!updatedEvent) {
+            return res.status(400).json({ error: 'Not enough seats' });
         }
 
-        if (quantity <= 0) {
-            return res.status(400).json({ error: 'Quantity must be greater than 0' });
-        }
-
-        // Get event safely
-        const foundEvent = await Event.findById(event);
-
-        if (!foundEvent) {
-            return res.status(404).json({ error: 'Event not found' });
-        }
-
-        // Ensure bookedSeats is NEVER undefined
-        if (foundEvent.bookedSeats == null) {
-            foundEvent.bookedSeats = 0;
-        }
-
-        const availableSeats = foundEvent.seatCapacity - foundEvent.bookedSeats;
-
-        if (quantity > availableSeats) {
-            return res.status(400).json({ error: 'Not enough seats available' });
-        }
-
-        // Update seats safely
-        foundEvent.bookedSeats += quantity;
-        await foundEvent.save();
-
-        // Create booking
         const booking = new Booking({
             user: req.user.id,
             event,
@@ -47,26 +34,23 @@ exports.createBooking = async (req, res, next) => {
 
         await booking.save();
 
-        // Generate QR code
+        //  Generate QR Code
         const qrData = `booking:${booking._id}`;
-
         const qrCode = await QRCode.toDataURL(qrData);
 
         booking.qrCode = qrCode;
         await booking.save();
 
-        // Send email
+        //  Send Email
         const user = await User.findById(req.user.id);
 
-        if (user && user.email) {
-            await sendEmail(
-                user.email,
-                'Booking Confirmation',
-                `Your booking is confirmed.\nBooking ID: ${booking._id}\nQuantity: ${quantity}`
-            );
-        }
+        await sendEmail(
+            user.email,
+            'Booking Confirmation',
+            `Booking successful!\nBooking ID: ${booking._id}`
+        );
 
-        return res.status(201).json({
+        res.status(201).json({
             message: 'Booking successful',
             booking,
             qrCode
@@ -90,9 +74,7 @@ exports.getBookingById = async (req, res, next) => {
     try {
         const booking = await Booking.findById(req.params.id).populate('event');
 
-        if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
-        }
+        if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
         if (booking.user.toString() !== req.user.id) {
             return res.status(403).json({ error: 'Unauthorized' });
