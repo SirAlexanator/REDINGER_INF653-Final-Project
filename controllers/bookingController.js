@@ -50,8 +50,8 @@ exports.createBooking = async (req, res, next) => {
         await booking.save();
 
         const user = await User.findById(req.user.id);
-//console.log("EMAIL USER:", process.env.EMAIL_USER);
-//console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
+console.log("EMAIL USER:", process.env.EMAIL_USER);
+console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
         if (user?.email) {
             await sendEmail(
                 user.email,
