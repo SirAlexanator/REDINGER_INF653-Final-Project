@@ -24,7 +24,7 @@ exports.createBooking = async (req, res, next) => {
             return res.status(404).json({ error: 'Event not found' });
         }
 
-        // 🔥 HARD SAFETY CHECK
+        //  HARD SAFETY CHECK
         const booked = Number(foundEvent.bookedSeats || 0);
         const capacity = Number(foundEvent.seatCapacity || 0);
 
@@ -50,7 +50,8 @@ exports.createBooking = async (req, res, next) => {
         await booking.save();
 
         const user = await User.findById(req.user.id);
-
+console.log("EMAIL USER:", process.env.EMAIL_USER);
+console.log("EMAIL PASS LENGTH:", process.env.EMAIL_PASS?.length);
         if (user?.email) {
             await sendEmail(
                 user.email,
