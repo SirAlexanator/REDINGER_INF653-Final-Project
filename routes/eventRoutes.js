@@ -1,4 +1,5 @@
 const router = require('express').Router();
+
 const auth = require('../middleware/authMiddleware');
 const admin = require('../middleware/adminMiddleware');
 
@@ -13,28 +14,36 @@ const {
     deleteEvent
 } = require('../controllers/eventController');
 
+// Public routes
 router.get('/', getEvents);
 router.get('/:id', getEventById);
 
+// Admin CRUD
 router.post('/', auth, admin, createEvent);
 router.put('/:id', auth, admin, updateEvent);
 router.delete('/:id', auth, admin, deleteEvent);
 
-//  Admin Dashboard
+// Admin dashboard
 router.get('/admin/dashboard', auth, admin, async (req, res) => {
-    const events = await Event.find();
+    try {
+        const events = await Event.find();
 
-    const result = await Promise.all(events.map(async (event) => {
-        const bookings = await Booking.find({ event: event._id })
-            .populate('user', 'name email');
+        const result = await Promise.all(
+            events.map(async (event) => {
+                const bookings = await Booking.find({ event: event._id })
+                    .populate('user', 'name email');
 
-        return {
-            event,
-            bookings
-        };
-    }));
+                return {
+                    event,
+                    bookings
+                };
+            })
+        );
 
-    res.json(result);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;
