@@ -51,3 +51,45 @@ A RESTful API built with Node.js, Express, and MongoDB for managing events, book
 git clone <https://github.com/SirAlexanator/REDINGER_INF653-Final-Project>
 cd event-ticketing-api
 npm install
+
+Setup Steps
+Create a .env file in the root directory
+Add required environment variables (see below)
+Ensure MongoDB Atlas is running and accessible
+
+PORT=10000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret_key
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+
+How to Run Locally
+Development Mode
+npm run dev
+Production Mode
+npm start
+Deployed API
+https://your-project-name.onrender.com
+
+API Endpoints
+Authentication
+POST /api/auth/register
+POST /api/auth/login
+
+Events
+GET /api/events
+GET /api/events/:id
+GET /api/events?category=categoryName
+GET /api/events?date=YYYY-MM-DD
+POST /api/events (admin only)
+PUT /api/events/:id (admin only)
+DELETE /api/events/:id (admin only)
+
+Bookings
+POST /api/bookings
+GET /api/bookings
+GET /api/bookings/:id
+GET /api/bookings/validate/:qr
+
+Admin
+GET /api/events/admin/dashboard
